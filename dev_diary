@@ -1,0 +1,27 @@
+6/22/2022
+
+At some point the client requests become sufficiently complex as to require "preflight" OPTIONS requests.
+This necessitated an explicit response in the case of OPTIONS request to include:
+    Access-Control-Allow-Origin: 'http://localhost:3000'
+    Access-Control-Allow-Credentials: 'true'
+    Access-Control-Allow-Headers: 'Content-Type'
+and the same headers included in the follow-up to the subsequent POST request. Otherwise
+we get a bunch of annoying CORS errors.
+
+session.permanent = True seems to have solved the missing session cookie problem.  Hallelujah
+
+
+6/17/2022
+
+In order to process JSON from client: Must be a POST request (or at least not a GET request) and the client must
+specify 'Accept': 'application/json' and 'Content-Type': 'application/json' headers.  Otherwise, attempting to access
+the request object fails and immediately returns a 400 error to the client.
+
+
+6/16/2022
+Had to install the flask-cors module to enable CORS. This is because the react SPA is served from a different
+port than the flask API.
+
+Additionally, the CORS object needs to allow cross origin credentials (meaning cookies can be read from a different
+domain?) to get around the same problem and allow the session cookie to work.
+
