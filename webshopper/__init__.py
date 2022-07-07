@@ -13,6 +13,7 @@ def create_app(test_config=None):
     # and supports_credentials so that we can submit the cookies
     CORS(app, supports_credentials=True)
 
+    print(f'This is the flask_env: {os.getenv("FLASK_ENV")}')
     app.config.from_mapping(
         SECRET_KEY='dev',
         DATABASE=os.path.join(app.instance_path, 'webshopper.sqlite')
@@ -31,11 +32,6 @@ def create_app(test_config=None):
     except OSError:
         pass
 
-    # a simple page that says hello
-    @app.route('/hello')
-    def hello():
-        return 'hello, world'
-
     # Adding database init
     from . import db
     db.init_app(app)
@@ -43,5 +39,9 @@ def create_app(test_config=None):
     # Adding auth registration
     from . import auth
     app.register_blueprint(auth.bp)
+
+    # Adding non-auth endpoints
+    from . import endpoints
+    app.register_blueprint(endpoints.bp)
 
     return app

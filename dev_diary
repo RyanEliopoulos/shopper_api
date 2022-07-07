@@ -1,3 +1,33 @@
+7/7/2022
+    Token management on the server side seems complete. Communicator silently refreshes token if needed.
+    Guard function acting as sentinel before making kroger endpoint calls in place. Workflow for updating
+    session with token info seems good.
+
+    At this point the core of the back end is complete. It is now just a matter of adding the specific code
+    new endpoints will require.
+
+    Reminder that all of the cross origin headers are to facilitate dev on localhost.
+
+7/6/2022
+
+Design decision: tokens and values will be stored in the session cookie. Updated by the login and authcode_from
+                endpoints. Communicator wil also update the session and db as it is responsible for exchanging tokens.
+                All endpoints that reach out to kroger will be wrapped with a token checker so that the client
+                can be alerted when a reauthorization is required.
+
+
+7/5/2022
+
+
+Kroger networking issue:
+1) Use dummy Kroger API data locally. So actually utilize the FLASK_ENV value appropriately. Set DEBUG flag
+    when not using FLASK_ENV="development" to retain reloading and debuggin features.
+2) Write script on AWS to pull changes and find-and-replace htt://localhost with htt://{ip} using sed -i.
+
+
+AWS: The default environment variables are set in /etc/profile
+
+
 6/22/2022
 
 At some point the client requests become sufficiently complex as to require "preflight" OPTIONS requests.
