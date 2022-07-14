@@ -35,7 +35,7 @@ def login():
     # Evaluating credentials
     ret = DBInterface.get_user(username, password)
     if ret[0] != 0:
-        return ret[1]['error'], 401
+        return ret[1], 401
     user: sqlite3.Row = ret[1]['user']
     # Credentials validated
     session.clear()
