@@ -1,6 +1,7 @@
 import functools
 from sqlite3 import Connection
 import sqlite3
+import json
 
 from webshopper.Communicator import Communicator
 from webshopper.db import DBInterface
@@ -29,13 +30,17 @@ def login():
     username = credentials.get('username', None)
     password = credentials.get('password', None)
     if not username:
+        print('no username')
         return {'error': 'Missing username'}, 400
     if not password:
+        print('no password')
         return {'error': 'Missing password'}, 400
     # Evaluating credentials
     ret = DBInterface.get_user(username, password)
     if ret[0] != 0:
-        return ret[1]['error'], 401
+        print('incorrect credentials')
+        print(ret[1]['error'])
+        return ret[1], 401
     user: sqlite3.Row = ret[1]['user']
     # Credentials validated
     session.clear()
@@ -53,7 +58,9 @@ def login():
     session['refresh_token_timestamp'] = user['refresh_token_timestamp']
     session.permanent = True
     # Sending response
-    resp = Response()
+    resp = Response(response=json.dumps({'username': user['username'],
+                                         'location_brand': user['location_brand'],
+                                         'location_address': user['location_address']}))
     resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     resp.headers['Access-Control-Allow-Credentials'] = 'true'
     resp.headers['Access-Control-Allow-Headers'] = "Content-Type"

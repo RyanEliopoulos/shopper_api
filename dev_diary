@@ -1,3 +1,7 @@
+7/13/2022
+    branch no_cookie is meant to eliminate the setting of the username cookie. Username and location values
+    will be passed as JSON following a 200 response.
+
 7/7/2022
     Token management on the server side seems complete. Communicator silently refreshes token if needed.
     Guard function acting as sentinel before making kroger endpoint calls in place. Workflow for updating
@@ -7,6 +11,8 @@
     new endpoints will require.
 
     Reminder that all of the cross origin headers are to facilitate dev on localhost.
+
+    location values returned from Kroger with 'SHELL COMPANY' for the chain value appear to be shell gas stations.
 
 7/6/2022
 

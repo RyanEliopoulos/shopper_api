@@ -27,5 +27,16 @@ def search_loc():
         return {'error': 'Zipcode must be 5 digits'}
 
     ret = Communicator.search_locations(zipcode)
-    print(ret)
-    return {'ret': 'made call'}
+    if ret[0] != 0:
+        print(f'error calling search_locations: {ret}')
+        return ret[1], 500
+    store_list: [dict] = ret[1]['results']['data']
+    trimmed_stores = []
+    for store in store_list:
+        tmp_dict = {
+            store['location_id'],
+            store['location_brand'],
+            store['location_address']
+        }
+        trimmed_stores.append(tmp_dict)
+    return {'locations': trimmed_stores}, 200
