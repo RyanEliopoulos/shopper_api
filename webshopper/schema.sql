@@ -8,7 +8,7 @@ CREATE TABLE users (
     access_token_timestamp FLOAT DEFAULT 0,
     refresh_token TEXT default '',
     refresh_token_timestamp FLOAT DEFAULT 0,
-    location_id TEXT DEFAULT '',
-    location_brand TEXT DEFAULT '',
+    locationId TEXT DEFAULT '',
+    location_chain TEXT DEFAULT '',
     location_address TEXT DEFAULT ''
 );

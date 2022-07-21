@@ -1,3 +1,20 @@
+7/20/2022
+    CORS and stuff: Only necessary when I want the cookies to be exchanged/transmitted. I can omit all of the
+    code required e.g. Access-Control-Allow-Origin if I want a basic API reply, like a 400 error + basic
+    error message.
+
+
+    Location endpoints are operational. There is not exhaustive error checking on client submissions. Will also
+    want to create a translation table for the "chain" values from Kroger API to filter out trash like 'SHELL COMPANY'
+    and make 'FRED' into 'Fred Meyer', etc.
+
+7/13/2022
+    branch no_cookie is meant to eliminate the setting of the username cookie. Username and location values
+    will be passed as JSON following a 200 response. Session cookie will persist so technically the user wouldn't have
+    to re-login every time they close the window but this is easiest for now.
+
+    SQL table has been updated to include location columns
+
 7/7/2022
     Token management on the server side seems complete. Communicator silently refreshes token if needed.
     Guard function acting as sentinel before making kroger endpoint calls in place. Workflow for updating
@@ -7,6 +24,8 @@
     new endpoints will require.
 
     Reminder that all of the cross origin headers are to facilitate dev on localhost.
+
+    location values returned from Kroger with 'SHELL COMPANY' for the chain value appear to be shell gas stations.
 
 7/6/2022
 
