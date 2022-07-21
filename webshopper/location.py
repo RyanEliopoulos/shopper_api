@@ -8,7 +8,7 @@ from flask import (
     Blueprint, flash, g, redirect, render_template, request, session, jsonify, Response, make_response
 )
 
-bp = Blueprint('location', __name__)
+bp = Blueprint('location', __name__, url_prefix='/location')
 
 
 @bp.route('/search_loc', methods=('POST',))
