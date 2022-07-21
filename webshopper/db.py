@@ -57,7 +57,7 @@ class DBInterface:
 
     @staticmethod
     def new_user(username: str, password) -> Tuple[int, dict]:
-        query = """ INSERT INTO user (username, password_hash)
+        query = """ INSERT INTO users (username, password_hash)
                     VALUES (?, ?)
                 """
         ret = DBInterface._execute_query(query,
@@ -75,7 +75,7 @@ class DBInterface:
         """ Does credential checking
         """
         query = """ SELECT * 
-                    FROM user
+                    FROM users
                     WHERE username = ?
                 """
         ret = DBInterface._execute_query(query, (username,), selection=True)
@@ -91,7 +91,7 @@ class DBInterface:
     @staticmethod
     def deposit_tokens(user_id: int, token_dict: dict) -> Tuple[int, dict]:
         """ responsible for depositing tokens into db """
-        query = """  UPDATE user 
+        query = """  UPDATE users 
                      SET access_token = ?
                         ,access_token_timestamp = ?
                         ,refresh_token = ?
@@ -107,7 +107,20 @@ class DBInterface:
             return -1, {'error': str(ret[1])}
         return 0, {}
 
+    @staticmethod
+    def update_location(user_id: int, locationId: str):
+        """ Updates user locationId value """
+        query = """ UPDATE users
+                    SET locationId = ?
+                    WHERE user_id = ?
+                """
+        ret = DBInterface._execute_query(query, (locationId, user_id))
+        if ret[0] != 0:
+            return -1, ret
+        return 0, {}
 
+
+# Auxiliary functions
 def init_db():
     db = DBInterface.get_db()
     with current_app.open_resource('schema.sql') as f:

@@ -41,7 +41,7 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
 
     # Adding non-auth endpoints
-    from . import endpoints
-    app.register_blueprint(endpoints.bp)
+    from . import location
+    app.register_blueprint(location.bp)
 
     return app

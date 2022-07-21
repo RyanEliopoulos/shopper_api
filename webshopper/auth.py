@@ -59,7 +59,7 @@ def login():
     session.permanent = True
     # Sending response
     resp = Response(response=json.dumps({'username': user['username'],
-                                         'location_brand': user['location_brand'],
+                                         'location_chain': user['location_chain'],
                                          'location_address': user['location_address']}))
     resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     resp.headers['Access-Control-Allow-Credentials'] = 'true'
