@@ -1,3 +1,18 @@
+7/22/2022
+    Guard function: Think about adding a 'location_required' function to endpoints to make sure
+                    user has selected a store before submitting a request
+7/21/2022
+    Relevant product search fields (bacon):
+
+       productId:
+       upc:
+       brand: Oscar Mayer   <-- Ignoring this because it seems redundant AND not every product has one
+       description: Oscar mayer Fully Cooked Thick Cut Bacon
+       images: Link to them so the weight/volume info can be readily obtained
+
+
+    Also includes URLs to images that we can display. Perhaps later.
+
 7/20/2022
     CORS and stuff: Only necessary when I want the cookies to be exchanged/transmitted. I can omit all of the
     code required e.g. Access-Control-Allow-Origin if I want a basic API reply, like a 400 error + basic

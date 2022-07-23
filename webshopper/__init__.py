@@ -44,4 +44,7 @@ def create_app(test_config=None):
     from . import location
     app.register_blueprint(location.bp)
 
+    from . import products
+    app.register_blueprint(products.bp)
+
     return app

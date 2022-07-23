@@ -52,6 +52,8 @@ def set_loc():
     # Validating locationId
     json = request.json
     locationId: str = json.get('locationId')
+    location_chain: str = json.get('location_chain')
+    location_address: str = json.get('location_address')
     if locationId is None:
         return {'error': 'missing locationId'}, 400
     try:
@@ -59,8 +61,9 @@ def set_loc():
     except ValueError:
         return {'error': 'locationId must be integers only'}, 400
     # Depositing into DB
-    print(f'Updating location id to: {locationId}')
-    ret = DBInterface.update_location(session.get('user_id'), locationId)
+    print(f'Updating location id to: {locationId}, {location_chain}, {location_address}')
+    ret = DBInterface.update_location(session.get('user_id'), locationId,
+                                      location_chain, location_address)
     if ret[0] != 0:
         return ret[1], 400
     return {}, 200

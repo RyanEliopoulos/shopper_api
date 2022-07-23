@@ -1,5 +1,4 @@
 import sqlite3
-from sqlite3 import Connection
 from typing import Tuple
 
 import click
@@ -19,6 +18,7 @@ class DBInterface:
         """
         db: sqlite3.Connection = DBInterface.get_db()
         cursor: sqlite3.Cursor = db.cursor()
+        cursor.execute('PRAGMA foreign_keys = 1')  # Enforce foreign key constraints per connection
         try:
             if parameters is None:
                 cursor.execute(sql_string)
@@ -108,15 +108,99 @@ class DBInterface:
         return 0, {}
 
     @staticmethod
-    def update_location(user_id: int, locationId: str):
+    def update_location(user_id: int, locationId: str,
+                        location_chain: str, location_address: str):
         """ Updates user locationId value """
         query = """ UPDATE users
                     SET locationId = ?
+                        ,location_chain = ?
+                        ,location_address = ?
                     WHERE user_id = ?
                 """
-        ret = DBInterface._execute_query(query, (locationId, user_id))
+        ret = DBInterface._execute_query(query, (locationId,
+                                                 location_chain,
+                                                 location_address,
+                                                 user_id))
         if ret[0] != 0:
             return -1, ret
+        return 0, {}
+
+    @staticmethod
+    def add_product(user_id: int, new_product: dict) -> Tuple[int, dict]:
+        """
+            Requires interacting with two different tables, so we will not rely upon ._execute_query
+            but will take destiny into our own hands here.
+
+        :param user_id:
+        :param new_product: {
+            'productId': <>,
+            'upc': <>,
+            'description': <>,
+            'image_urls': [{'perspective': <>, 'url': <>}, ...],
+            'servingSize': <>,
+            'servingsPerContainer': <>,
+            'servingUnit': <>,
+            'unitType: <'weight', 'volume'>,
+            'includeAlternate': <>,
+            'alternateSS': <>,
+            'alternateSPC: <>,
+            'alternateSU': <>,
+
+        """
+        db: sqlite3.Connection = DBInterface.get_db()
+        crsr: sqlite3.Cursor = db.cursor()
+        if new_product['includeAlternate']:
+            product_query = """ INSERT INTO products
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            """
+            try:
+                crsr.execute(product_query, (user_id,
+                                             new_product['productId'],
+                                             new_product['upc'],
+                                             new_product['description'],
+                                             float(new_product['servingSize']),
+                                             new_product['servingUnit'],
+                                             float(new_product['servingsPerContainer']),
+                                             float(new_product['alternateSS']),
+                                             float(new_product['alternateSPC']),
+                                             new_product['alternateSU']))
+            except sqlite3.Error as e:
+                return -1, {'error': str(e)}
+        else:  # No alternate values
+            product_query = """ INSERT INTO products (user_id
+                                                        , productId
+                                                        , upc
+                                                        , description
+                                                        , serving_size
+                                                        , serving_unit
+                                                        , servings_per_container)
+                                VALUES (?, ?, ?, ?, ?, ?, ?)
+                            """
+            try:
+                crsr.execute(product_query, (user_id,
+                                             new_product['productId'],
+                                             new_product['upc'],
+                                             new_product['description'],
+                                             float(new_product['servingSize']),
+                                             new_product['servingUnit'],
+                                             float(new_product['servingsPerContainer'])))
+            except sqlite3.Error as e:
+                return -1, {'error': str(e)}
+        # product_query successful. Now entering URLs
+        url_query = """ INSERT INTO products_imgurls
+                        VALUES (?, ?, ?, ?)
+                    """
+        urls: list = new_product['image_urls']
+        for url in urls:
+            try:
+                crsr.execute(url_query, (user_id,
+                                        new_product['productId'],
+                                        url['perspective'],
+                                        url['url']))
+            except sqlite3.Error as e:
+                return -1, {'error': str(e)}
+        # Successfully inserted all values
+        db.commit()
         return 0, {}
 
 
