@@ -44,17 +44,11 @@ def login():
     # Credentials validated
     session.clear()
     session['user_id'] = user['user_id']
-    # Determining access token situation
-    if user['access_token'] == '':
-        ktok = 'MIS'  # Missing
-    elif not Communicator.check_rtoken(user['refresh_token_timestamp']):
-        ktok = 'EXP'  # Expired
-    else:
-        ktok = 'GUD'  # Good
     session['access_token'] = user['access_token']
     session['access_token_timestamp'] = user['access_token_timestamp']
     session['refresh_token'] = user['refresh_token']
     session['refresh_token_timestamp'] = user['refresh_token_timestamp']
+    session['locationId'] = user['locationId']
     session.permanent = True
     # Sending response
     resp = Response(response=json.dumps({'username': user['username'],
@@ -63,8 +57,6 @@ def login():
     resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     resp.headers['Access-Control-Allow-Credentials'] = 'true'
     resp.headers['Access-Control-Allow-Headers'] = "Content-Type"
-    resp.set_cookie('username', user['username'])
-    resp.set_cookie('ktok', ktok)
     return resp, 200
 
 
