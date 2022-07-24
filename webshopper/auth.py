@@ -49,11 +49,18 @@ def login():
     session['refresh_token'] = user['refresh_token']
     session['refresh_token_timestamp'] = user['refresh_token_timestamp']
     session['locationId'] = user['locationId']
+    # Pulling user's products
+    ret = DBInterface.get_user_prods(user['user_id'])
+    if ret[0] != 0:
+        print(f'error retrieving products from database: {ret}')
+        return {'error': f'error retrieving products from database: {ret}'}, 500
+    products: list = ret[1]['products']
     session.permanent = True
     # Sending response
     resp = Response(response=json.dumps({'username': user['username'],
                                          'location_chain': user['location_chain'],
-                                         'location_address': user['location_address']}))
+                                         'location_address': user['location_address'],
+                                         'products': products}))
     resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     resp.headers['Access-Control-Allow-Credentials'] = 'true'
     resp.headers['Access-Control-Allow-Headers'] = "Content-Type"

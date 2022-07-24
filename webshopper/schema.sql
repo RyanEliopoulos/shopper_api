@@ -21,10 +21,12 @@ CREATE TABLE products (
     upc TEXT NOT NULL,
     description TEXT NO NULL,
     serving_size float NOT NULL,
+    servings_per_container FLOAT NOT NULL,
     serving_unit TEXT NOT NULL,
-    servings_per_container float NOT NULL,
-    alternate_ss float,
-    alternate_spc float,
+    unit_type TEXT NOT NULL,            --'weight' or 'volume'
+    include_alternate INTEGER NOT NULL,     -- boolean: 'true' or 'false'
+    alternate_ss FLOAT,
+    alternate_spc FLOAT,
     alternate_su TEXT,
 
     PRIMARY KEY (user_id, productId),

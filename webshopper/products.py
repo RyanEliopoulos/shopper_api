@@ -48,7 +48,7 @@ def search_products():
             'productId': prod['productId'],
             'upc': prod['upc'],
             'description': prod['description'],
-            'image_urls': image_urls(prod['images'])
+            'image_urls': image_urls(prod['images']),
         }
         ret_list.append(tmp_dict)
     return {'products': ret_list}, 200
@@ -72,6 +72,26 @@ def add_product():
     if ret[0] != 0:
         print(f'db error with new product: {ret}')
         return ret[1], 400
+    return {}, 200
+
+
+@bp.route('edit_product', methods=('POST',))
+@login_required
+def edit_product():
+    """
+
+    :return:
+    """
+    print('here')
+    json = request.json
+    edited_product = json['edited_product']
+    ret = validate_new_product(edited_product, edited_product['includeAlternate'])
+    if ret[0] != 0:
+        return ret[1], 400
+    # Updating product in database
+    ret = DBInterface.edit_product(session['user_id'], edited_product)
+    if ret[0] != 0:
+        return ret[1], 500
     return {}, 200
 
 
