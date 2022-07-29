@@ -333,6 +333,34 @@ class DBInterface:
             return -1, {'error': str(ret[1]['error'])}
         return 0, {}
 
+    @staticmethod
+    def delete_product(user_id: int, productId: str) -> Tuple[int, dict]:
+        """  Requires two calls, first deleting the entries in 'products_imgurls'
+            table before the target entries can be deleted from 'products'
+        """
+
+        db: sqlite3.Connection = DBInterface.get_db()
+        crsr: sqlite3.Cursor = db.cursor()
+
+        query = """ DELETE FROM products_imgurls
+                    WHERE user_id = ?
+                          AND productId = ?
+                """
+        try:
+            crsr.execute(query, (user_id, productId))
+        except sqlite3.Error as e:
+            return -1, {'error': str(e)}
+        query = """ DELETE FROM products
+                    WHERE user_id = ?
+                          AND productId =?
+                """
+        try:
+            crsr.execute(query, (user_id, productId))
+        except sqlite3.Error as e:
+            return -1, {'error': str(e)}
+        db.commit()
+        return 0, {}
+
 
 # Auxiliary functions
 def init_db():

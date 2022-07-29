@@ -95,6 +95,20 @@ def edit_product():
     return {}, 200
 
 
+@bp.route('delete_product', methods=('POST',))
+@login_required
+def delete_product():
+    """ Expects the productId of the target product """
+    json = request.json
+    deleted_prod_id: str = json['deleted_product_id']
+    ret = DBInterface.delete_product(session['user_id'], deleted_prod_id)
+    if ret[0] != 0:
+        return {'error': ret[1]['error']}, 500
+    return {}, 200
+
+
+
+
 """ 
     HELPER FUNCTIONS
 """
