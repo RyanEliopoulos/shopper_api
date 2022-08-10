@@ -167,37 +167,7 @@ class DBInterface:
                                          new_product['alternateSU']))
         except sqlite3.Error as e:
             return -1, {'error': str(e)}
-        # else:  # No alternate values
-        #     product_query = """ INSERT INTO products (user_id
-        #                                                 , productId
-        #                                                 , upc
-        #                                                 , description
-        #                                                 , serving_size
-        #                                                 , servings_per_container
-        #                                                 , serving_unit
-        #                                                 , unit_type
-        #                                                 , include_alternate
-        #                                                 , alternate_ss
-        #                                                 , alternate_spc
-        #                                                 , alternate_su)
-        #                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        #                     """
-        #     try:
-        #         crsr.execute(product_query, (user_id,
-        #                                      new_product['productId'],
-        #                                      new_product['upc'],
-        #                                      new_product['description'],
-        #                                      float(new_product['servingSize']),
-        #                                      float(new_product['servingsPerContainer']),
-        #                                      new_product['servingUnit'],
-        #                                      new_product['unitType'],
-        #                                      new_product['includeAlternate'],
-        #                                      0,
-        #                                      0,
-        #                                      new_product['alternate_su']))
-        #     except sqlite3.Error as e:
-        #         return -1, {'error': str(e)}
-        # product_query successful. Now entering URLs
+
         url_query = """ INSERT INTO products_imgurls
                         VALUES (?, ?, ?, ?)
                     """
@@ -360,6 +330,135 @@ class DBInterface:
             return -1, {'error': str(e)}
         db.commit()
         return 0, {}
+
+    @staticmethod
+    def new_recipe(user_id: int, recipe_name: str) -> Tuple[int, dict]:
+        """
+            Need to return the last_rowid of inserted value.
+
+        """
+        conn: sqlite3.Connection = DBInterface.get_db()
+        crsr: sqlite3.Cursor = conn.cursor()
+        query = """ INSERT INTO recipes (user_id, recipe_name)
+                    VALUES (?, ?)
+                """
+        try:
+            crsr.execute(query, (user_id, recipe_name))
+            conn.commit()
+        except sqlite3.Error as e:
+            return -1, {'error': str(e)}
+        # Success
+        last_rowid: int = crsr.lastrowid
+        print(f'Here is the last_rowid: {last_rowid}')
+        return 0, {'recipe_id': last_rowid}
+
+    @staticmethod
+    def update_recipe_text(user_id: int, recipe_id: int, recipe_text: str) -> Tuple[int, dict]:
+        query = """ UPDATE recipes
+                    SET recipe_text = ?
+                    WHERE user_id = ?
+                          AND recipe_id = ?
+                """
+        ret = DBInterface._execute_query(query, (recipe_text, user_id, recipe_id))
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        return ret
+
+    @staticmethod
+    def get_user_recipes(user_id: int) -> Tuple[int, dict]:
+        """ Returns recipes and their accompanying ingredient data """
+
+        query = """  SELECT * 
+                     FROM recipes r LEFT JOIN ingredients i
+                     ON r.recipe_id = i.recipe_id
+                     WHERE r.user_id = ?
+                     ORDER BY r.recipe_id
+                """
+        ret = DBInterface._execute_query(query, (user_id,), selection=True)
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        crsr: sqlite3.Cursor = ret[1]['cursor']
+        rows = crsr.fetchall()
+        if len(rows) == 0:
+            return 0, {'recipes': {}}
+
+        # Packaging recipes
+        # Each recipe is a dictionary, and each ingredient set is a dictionary keyed on
+        # ingredient_id
+        recipes: dict = {}
+        tmp_rec: dict = {
+            'recipe_name': rows[0]['recipe_name'],
+            'recipe_text': rows[0]['recipe_text'],
+            'recipe_id': rows[0]['recipe_id'],
+            'ingredients': {}
+        }
+        curr_rec_id: int = rows[0]['recipe_id']
+        for row in rows:
+            if row['recipe_id'] != curr_rec_id:  # Reached next recipe
+                recipes[curr_rec_id]: dict = tmp_rec
+                curr_rec_id = row['recipe_id']
+                tmp_rec = {
+                    'recipe_name': row['recipe_name'],
+                    'recipe_text': row['recipe_text'],
+                    'recipe_id': row['recipe_id'],
+                    'ingredients': {}
+                }
+            if row['ingredient_name'] is None:  # The recipe has no corresponding ingredients
+                continue
+            ingredient_id: int = row['ingredient_id']
+            ingredient: dict = {
+                'ingredient_name': row['ingredient_name'],
+                'ingredient_id': row['ingredient_id'],
+                'ingredient_quantity': row['ingredient_quantity'],
+                'ingredient_unit': row['ingredient_unit'],
+                'productId': row['productId'],
+                'recipe_id': row['recipe_id'],
+                'product_description': row['product_description']
+            }
+            tmp_rec['ingredients'][ingredient_id] = ingredient
+        # Finalize last recipe
+        recipes[curr_rec_id] = tmp_rec
+        return 0, {'recipes': recipes}
+
+    @staticmethod
+    def new_ingredient(user_id: int, recipe_id: int, productId: str,
+                       ingredient_name: str, ingredient_quantity: float, ingredient_unit: str,
+                       product_description: str) -> Tuple[int, dict]:
+        """
+            recipe_id is sufficient to tie the ingredient to the user_id
+        """
+        query = """ INSERT INTO ingredients (user_id, 
+                                             recipe_id, 
+                                             productId, 
+                                             ingredient_name,
+                                             ingredient_quantity,
+                                             ingredient_unit,
+                                             product_description)
+                     VALUES (?, ?, ?, ?, ?, ?, ?)
+                """
+        ret = DBInterface._execute_query(query, (user_id,
+                                                 recipe_id,
+                                                 productId,
+                                                 ingredient_name,
+                                                 ingredient_quantity,
+                                                 ingredient_unit,
+                                                 product_description),
+                                         selection=True)
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        crsr: sqlite3.Cursor = ret[1]['cursor']
+        last_rowid = crsr.lastrowid
+        return 0, {'ingredient_id': last_rowid}
+
+    @staticmethod
+    def delete_ingredient(ingredient_id: str):
+        query = """ DELETE FROM ingredients
+                    WHERE ingredient_id = ?
+                """
+        ret = DBInterface._execute_query(query, (ingredient_id,))
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        return ret
 
 
 # Auxiliary functions

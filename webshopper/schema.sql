@@ -42,3 +42,28 @@ CREATE TABLE products_imgurls (
     PRIMARY KEY(user_id, productId, perspective, url),
     FOREIGN KEY(user_id, productId) REFERENCES products(user_id, productId)
 );
+
+
+CREATE TABLE recipes (
+    recipe_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    recipe_name TEXT NOT NULL,
+    recipe_text TEXT NOT NULL DEFAULT '',  -- User-provided details on the recipe i.e. directions
+
+    FOREIGN KEY (user_id) REFERENCES users(user_id)
+);
+
+CREATE TABLE ingredients (
+    ingredient_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    recipe_id INTEGER NOT NULL,
+    productId TEXT NOT NULL,
+    ingredient_name TEXT NOT NULL,
+    ingredient_quantity FLOAT NOT NULL,
+    ingredient_unit TEXT NOT NULL,
+    product_description TEXT NOT NULL,
+
+    FOREIGN KEY (user_id, productId) REFERENCES products(user_id, productId),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(recipe_id)
+
+);

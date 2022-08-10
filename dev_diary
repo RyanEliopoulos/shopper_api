@@ -1,3 +1,7 @@
+7/31/2022
+    SQLite last_rowid: function callable that returns the INTEGER PRIMARY KEY value of the last inserted row on the given
+                       connection.
+
 7/22/2022
     Guard function: Think about adding a 'location_required' function to endpoints to make sure
                     user has selected a store before submitting a request
