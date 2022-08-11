@@ -15,8 +15,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @bp.route('/login', methods=('POST', 'OPTIONS'))
 def login():
-    """ Sets ktok cookie to reflect validity of the user's tokens.
-        Includes tokens and their timestamps in session cookie if at least one is valid
+    """
     """
     if request.method == 'OPTIONS':
         # Preflighting

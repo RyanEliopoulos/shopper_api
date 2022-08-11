@@ -86,4 +86,11 @@ def update_recipe_text():
 @bp.route('/order_recipes', methods=('POST',))
 @login_required
 def order_recipes():
+    """
+        POST data can include the complete list of ingredients and their corresponding
+        productId values.
+
+        We would pull the productId serving information from the DB, then
+    :return:
+    """
     json: dict = request.json

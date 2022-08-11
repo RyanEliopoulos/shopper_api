@@ -142,6 +142,8 @@ class DBInterface:
             'servingsPerContainer': <>,
             'servingUnit': <gram, lb, oz, cup, tbsp, tsp, floz>,
             'unitType: <'weight', 'volume'>,
+            'total_container_quantity': <float>,
+            'total_quantity_unit': <'gram', 'ml'>,
             'includeAlternate': <'true', 'false'>,
             'alternateSS': <>,
             'alternateSPC: <>,
@@ -150,7 +152,7 @@ class DBInterface:
         db: sqlite3.Connection = DBInterface.get_db()
         crsr: sqlite3.Cursor = db.cursor()
         product_query = """ INSERT INTO products
-                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                         """
         try:
             crsr.execute(product_query, (user_id,
@@ -161,6 +163,8 @@ class DBInterface:
                                          float(new_product['servingsPerContainer']),
                                          new_product['servingUnit'],
                                          new_product['unitType'],
+                                         new_product['total_container_quantity'],
+                                         new_product['total_quantity_unit'],
                                          new_product['includeAlternate'],
                                          float(new_product['alternateSS']),
                                          float(new_product['alternateSPC']),
@@ -175,9 +179,9 @@ class DBInterface:
         for url in urls:
             try:
                 crsr.execute(url_query, (user_id,
-                                        new_product['productId'],
-                                        url['perspective'],
-                                        url['url']))
+                                         new_product['productId'],
+                                         url['perspective'],
+                                         url['url']))
             except sqlite3.Error as e:
                 return -1, {'error': str(e)}
         # Successfully inserted all values
@@ -194,7 +198,7 @@ class DBInterface:
             of this function call.
 
         :param user_id:
-        :return:  On success the results value will be a list of:
+        :return:  On success the results value will be a list of product dictionaries
             { 'productId': <>,
             'upc': <>,
             'description': <>,
@@ -203,6 +207,8 @@ class DBInterface:
             'servingsPerContainer': <>,
             'servingUnit': <>,
             'unitType: <'weight', 'volume'>,
+            'total_container_quantity': <float>,
+            'total_quantity_unit': <'gram', 'ml'>,
             'includeAlternate': <'true', 'false'>,
             'alternateSS': <>,
             'alternateSPC: <>,
@@ -265,7 +271,7 @@ class DBInterface:
         for row in ret_rows:
             tmp_dict = {
                 'perspective': row['perspective'],
-                'url':  row['url']
+                'url': row['url']
             }
             url_list.append(tmp_dict)
         return 0, {'urls': url_list}
@@ -281,6 +287,8 @@ class DBInterface:
                       , servings_per_container = ?
                       , serving_unit = ?
                       , unit_type = ?
+                      , total_container_quantity = ?
+                      , total_quantity_unit = ?
                       , include_alternate = ?
                       , alternate_ss = ?
                       , alternate_spc = ?
@@ -293,6 +301,8 @@ class DBInterface:
                                                  float(edited_product['servingsPerContainer']),
                                                  edited_product['servingUnit'],
                                                  edited_product['unitType'],
+                                                 edited_product['total_container_quantity'],
+                                                 edited_product['total_quantity_unit'],
                                                  edited_product['includeAlternate'],
                                                  float(edited_product['alternateSS']),
                                                  float(edited_product['alternateSPC']),
@@ -459,6 +469,50 @@ class DBInterface:
         if ret[0] != 0:
             return -1, {'error': str(ret[1]['error'])}
         return ret
+
+    @staticmethod
+    def get_unit_translations() -> Tuple[int, dict]:
+        query = """ SELECT * 
+                    FROM unit_translations
+                """
+        ret = DBInterface._execute_query(query, selection=True)
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        crsr: sqlite3.Cursor = ret[1]['cursor']
+        rows = crsr.fetchall()
+        conversion_dict: dict = {}  # dict of dicts
+        for row in rows:
+            unit_from: str = row['from_unit']
+            unit_to: str = row['to_unit']
+            to_value: float = row['to_value']
+            if unit_from in conversion_dict:
+                conversion_dict[unit_from][unit_to] = to_value
+            else:
+                # First entry of 'unit_from' value
+                conversion_dict[unit_from] = {unit_to: to_value}
+        return 0, {'conversion_dict': conversion_dict}
+
+    @staticmethod
+    def get_units() -> Tuple[int, dict]:
+        """ Returns dictionary of possible weights/measures keyed on unit_type
+            {'weight': ['gram', 'oz', ...,
+            'volume': ['cup', 'tbsp'...}
+        """
+        query = """ SELECT *
+                    FROM units
+                """
+        ret = DBInterface._execute_query(query, selection=True)
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        crsr: sqlite3.Cursor = ret[1]['cursor']
+        rows = crsr.fetchall()
+        unit_dict: dict = {'weight': [], 'volume': []}
+        for row in rows:
+            if row['unit_type'] == 'weight':
+                unit_dict['weight'].append(row['unit'])
+            else:
+                unit_dict['volume'].append(row['unit'])
+        return 0, {'unit_dict': unit_dict}
 
 
 # Auxiliary functions
