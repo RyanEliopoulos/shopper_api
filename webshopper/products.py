@@ -58,7 +58,11 @@ def search_products():
 @login_required
 def add_product():
     """
-        Remember that all incoming JSON values are strings, even if we don't want them to be
+        Remember that all incoming JSON values are strings, even if we don't want them to be.
+
+        'total_container_quantity' is calculated for the new product by normalizing weight measures
+        to grams and volume measures to ml.
+
     """
     json = request.json
     new_product: dict = json['new_product']
@@ -67,6 +71,12 @@ def add_product():
         print(f'error validating serving stuff: {ret}')
         return ret[1], 400
     print(new_product)
+
+    # Calculating total weight/volume based on the serving size and servings per container
+    # Getting the unit_conversion table
+    ret = set_container_quantity(new_product)
+    if ret[0] != 0:
+        return ret[1], 500
     # Inserting into database
     ret = DBInterface.add_product(session.get('user_id'), new_product)
     if ret[0] != 0:
@@ -88,6 +98,11 @@ def edit_product():
     ret = validate_new_product(edited_product, edited_product['includeAlternate'])
     if ret[0] != 0:
         return ret[1], 400
+    # Calculating total weight/volume based on the serving size and servings per container
+    # Getting the unit_conversion table
+    ret = set_container_quantity(edited_product)
+    if ret[0] != 0:
+        return ret[1], 500
     # Updating product in database
     ret = DBInterface.edit_product(session['user_id'], edited_product)
     if ret[0] != 0:
@@ -188,4 +203,42 @@ def image_urls(image_list: list) -> List[dict]:
     return url_list
 
 
+def set_container_quantity(product: dict) -> Tuple[int, dict]:
+    """ Modifies the given product dictionary to include the total_container_quantity
+        and container_quantity_unit fields.
 
+        Dictionary is pass by reference so it is not returned
+    """
+    ret = DBInterface.get_unit_translations()
+    if ret[0] != 0:
+        return ret
+    conversion_dict = ret[1]['conversion_dict']
+    # Getting unit type lists
+    ret = DBInterface.get_units()
+    if ret[0] != 0:
+        return ret
+    unit_dict = ret[1]['unit_dict']
+    if product['servingUnit'] in unit_dict['weight']:
+        unit_type = 'weight'
+    elif product['servingUnit'] in unit_dict['volume']:
+        unit_type = 'volume'
+    else:
+        # Should never be here
+        unit_type = product['servingUnit']
+        return -1, {'error': f'${unit_type} is not a recognized weight/measure..'}
+    # Normalizing to either gram or ml
+    total_container_quantity: float = 0
+    if unit_type == 'weight':
+        unconverted_total = float(product['servingsPerContainer']) * float(product['servingSize'])
+        serving_unit: str = product['servingUnit']
+        total_container_quantity = float(conversion_dict[serving_unit]['gram']) * unconverted_total
+        product['total_quantity_unit'] = 'gram'
+    else:
+        unconverted_total = float(product['servingsPerContainer']) * float(product['servingSize'])
+        print(f'unconverted total: {unconverted_total}')
+        serving_unit: str = product['servingUnit']
+        total_container_quantity = float(conversion_dict[serving_unit]['ml']) * unconverted_total
+        print(f'converted total: {total_container_quantity}')
+        product['total_quantity_unit'] = 'ml'
+    product['total_container_quantity'] = total_container_quantity
+    return 0, {}

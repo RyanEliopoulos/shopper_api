@@ -5,6 +5,7 @@ import webshopper.db as db
 import datetime
 import urllib.parse
 from typing import Tuple
+from typing import List
 from webshopper.db import DBInterface
 
 from flask import (
@@ -173,12 +174,11 @@ class Communicator:
     def search_product(search_term: str, locationId: str) -> Tuple[int, dict]:
         """ Submits search term to Kroger API """
 
-        if len(search_term) < 4:
+        if len(search_term) < 3:
             return -1, {'error_message': 'String must be at least 3 characters'}
         if not Communicator.check_ctoken(session['access_token_timestamp']):
             ret = Communicator.refresh_tokens()
             if ret[0] != 0:
-                print(f'Error searching products: {ret}')
                 return ret
         # Fresh tokens in hand
         access_token: str = session['access_token']
@@ -198,3 +198,24 @@ class Communicator:
         if req.status_code != 200:
             return -1, {'error_message': f'{req.status_code}: {req.text}'}
         return 0, {'results': req.json()}
+
+    @staticmethod
+    def add_to_cart(shopping_list: List[dict]) -> Tuple[int, dict]:
+        if not Communicator.check_ctoken(session['access_token_timestamp']):
+            ret = Communicator.refresh_tokens()
+            if ret[0] != 0:
+                return ret
+        # Valid tokens in hand
+        access_token: str = session['access_token']
+        headers: dict = {
+            'Accept': 'application/json'
+            , 'Authorization': f'Bearer {access_token}'
+        }
+        data: dict = {
+            'items': shopping_list
+        }
+        target_url: str = f'{Communicator.api_base}cart/add'
+        req = requests.put(target_url, headers=headers, json=data)
+        if req.status_code != 204:
+            return -1, {'error': req.text}
+        return 0, {'response': req.text}

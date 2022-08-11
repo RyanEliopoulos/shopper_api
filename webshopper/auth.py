@@ -15,8 +15,7 @@ bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 @bp.route('/login', methods=('POST', 'OPTIONS'))
 def login():
-    """ Sets ktok cookie to reflect validity of the user's tokens.
-        Includes tokens and their timestamps in session cookie if at least one is valid
+    """
     """
     if request.method == 'OPTIONS':
         # Preflighting
@@ -55,12 +54,20 @@ def login():
         print(f'error retrieving products from database: {ret}')
         return {'error': f'error retrieving products from database: {ret}'}, 500
     products: list = ret[1]['products']
+    # Pulling user's recipes
+    ret = DBInterface.get_user_recipes(user['user_id'])
+    if ret[0] != 0:
+        return ret[1], 500
+    recipes: dict = ret[1]['recipes']
+    print(f"Here is the recipe set: {ret[1]['recipes']}")
+
     session.permanent = True
     # Sending response
     resp = Response(response=json.dumps({'username': user['username'],
                                          'location_chain': user['location_chain'],
                                          'location_address': user['location_address'],
-                                         'products': products}))
+                                         'products': products,
+                                         'recipes': recipes}))
     resp.headers['Access-Control-Allow-Origin'] = 'http://localhost:3000'
     resp.headers['Access-Control-Allow-Credentials'] = 'true'
     resp.headers['Access-Control-Allow-Headers'] = "Content-Type"
