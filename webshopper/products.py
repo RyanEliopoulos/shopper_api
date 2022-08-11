@@ -218,7 +218,6 @@ def set_container_quantity(product: dict) -> Tuple[int, dict]:
     if ret[0] != 0:
         return ret
     unit_dict = ret[1]['unit_dict']
-    unit_type = ''
     if product['servingUnit'] in unit_dict['weight']:
         unit_type = 'weight'
     elif product['servingUnit'] in unit_dict['volume']:

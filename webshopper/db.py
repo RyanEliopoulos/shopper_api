@@ -1,4 +1,5 @@
 import sqlite3
+import json
 from typing import Tuple
 from typing import List
 
@@ -189,6 +190,51 @@ class DBInterface:
         return 0, {}
 
     @staticmethod
+    def get_specific_prods(user_id: int, productIds: list) -> Tuple[int, dict]:
+        """
+            Returns the products specified in the productIds list
+            as a dictionary
+            {<productId>: {product}, ...}
+
+        :return:
+        """
+        ids_as_string = json.dumps(productIds)
+        ids_as_string = ids_as_string.replace('[', '(')
+        ids_as_string = ids_as_string.replace(']', ')')
+
+        query = """ SELECT *
+                    FROM products
+                    where user_id = ?
+                          AND productId in 
+                """ + ids_as_string
+        ret = DBInterface._execute_query(query, (user_id,), selection=True)
+        if ret[0] != 0:
+            return -1, {'error': str(ret[1]['error'])}
+        crsr: sqlite3.Cursor = ret[1]['cursor']
+        rows = crsr.fetchall()
+        products: dict = {}
+        for row in rows:
+            prod_dict = {
+                'productId': row['productId'],
+                'upc': row['upc'],
+                'description': row['description'],
+                'image_urls': 'PLACEHOLDER',
+                'servingSize': row['serving_size'],
+                'servingUnit': row['serving_unit'],
+                'servingsPerContainer': row['servings_per_container'],
+                'unitType': row['unit_type'],
+                'total_container_quantity': row['total_container_quantity'],
+                'total_quantity_unit': row['total_quantity_unit'],
+                'includeAlternate': row['include_alternate'],
+                'alternateSS': row['alternate_ss'],
+                'alternateSPC': row['alternate_spc'],
+                'alternateSU': row['alternate_su']
+            }
+            productId = row['productId']
+            products[productId] = prod_dict
+        return 0, {'products_dict': products}
+
+    @staticmethod
     def get_user_prods(user_id: int) -> Tuple[int, dict]:
         """
             Pulls from products table. Calls helper function to pull
@@ -236,6 +282,8 @@ class DBInterface:
                 'servingUnit': row['serving_unit'],
                 'servingsPerContainer': row['servings_per_container'],
                 'unitType': row['unit_type'],
+                'total_container_quantity': row['total_container_quantity'],
+                'total_quantity_unit': row['total_quantity_unit'],
                 'includeAlternate': row['include_alternate'],
                 'alternateSS': row['alternate_ss'],
                 'alternateSPC': row['alternate_spc'],
