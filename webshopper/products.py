@@ -2,6 +2,7 @@ from typing import Tuple
 from typing import List
 from webshopper.auth import login_required
 from webshopper.auth import valid_tokens
+from webshopper.auth import location_required
 from webshopper.Communicator import Communicator
 from webshopper.db import DBInterface
 import sqlite3
@@ -16,6 +17,7 @@ bp = Blueprint('products', __name__, url_prefix='/products')
 @bp.route('/search', methods=('POST',))
 @login_required
 @valid_tokens
+@location_required
 def search_products():
     """
         Expects 'search_term' in the JSON.
@@ -41,7 +43,6 @@ def search_products():
     # Call to Kroger succeeded
     products: list = ret[1]['results']['data']  # Going to be some sort of JSON
     # Now need to organize the relevant information
-    print(products[0])
     ret_list: list = []
     for prod in products:
         tmp_dict = {
@@ -52,6 +53,31 @@ def search_products():
         }
         ret_list.append(tmp_dict)
     return {'products': ret_list}, 200
+
+
+@bp.route('/product_detail', methods=('POST', 'GET'))
+@login_required
+@valid_tokens
+@location_required
+def product_detail():
+    """
+        Gets details on a specific product, specified by UPC
+        Returns 'categories' list, 'soldBy' str, size
+
+    :return:
+    """
+    print('here')
+    # json: dict = request.json
+    # upc: str = json['upc']
+    locationId = session['locationId']
+    upc = '0022571700000'
+    ret = Communicator.product_details(upc, locationId)
+    if ret[0] != 0:
+        print('bad request to Kroger')
+        return ret[1], 500
+    print(ret)
+    print(ret[1]['response']['data']['items'])
+    return {'details': ret[1]['response']['data']['items']}, 200
 
 
 @bp.route('/add_product', methods=('POST',))

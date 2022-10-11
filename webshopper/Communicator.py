@@ -197,6 +197,7 @@ class Communicator:
         req = requests.get(target_url, headers=headers, params=params)
         if req.status_code != 200:
             return -1, {'error_message': f'{req.status_code}: {req.text}'}
+        print(req.json())
         return 0, {'results': req.json()}
 
     @staticmethod
@@ -219,3 +220,25 @@ class Communicator:
         if req.status_code != 204:
             return -1, {'error': req.text}
         return 0, {'response': req.text}
+
+    @staticmethod
+    def product_details(upc: str, locationId: str) -> Tuple[int , dict]:
+        if not Communicator.check_ctoken(session['access_token_timestamp']):
+            ret = Communicator.refresh_tokens()
+            if ret[0] != 0:
+                return ret
+        access_token = session['access_token']
+        headers: dict = {
+            'Content-Type': 'application/x-www-form-urlencoded'
+            , 'Authorization': f'Bearer {access_token}'
+        }
+        params = {
+            'filter.locationId': '70100140',
+        }
+        target_url: str = f'{Communicator.api_base}products/{upc}'
+
+        req = requests.get(target_url, headers=headers, params=params)
+        if req.status_code != 200:
+            return -1, {'error': req.text}
+        return 0, {'response': req.json()}
+

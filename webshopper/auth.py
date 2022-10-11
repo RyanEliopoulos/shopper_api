@@ -1,5 +1,4 @@
 import functools
-from sqlite3 import Connection
 import sqlite3
 import json
 
@@ -123,9 +122,7 @@ def authcode_from():
     session['access_token_timestamp'] = token_dict['access_token_timestamp']
     session['refresh_token'] = token_dict['refresh_token']
     session['refresh_token_timestamp'] = token_dict['refresh_token_timestamp']
-    resp = make_response(redirect('http://35.88.61.178'))
-    resp.set_cookie('ktok', 'GUD')
-    return resp, 200
+    return redirect('https://ryanpaulos.dev', code=302)
 
 
 @bp.route('/authcode_to', methods=('GET',))
@@ -137,6 +134,11 @@ def authcode_to():
     return redirect(url)
 
 
+"""
+    Decorators
+"""
+
+
 def login_required(view):
     @functools.wraps(view)
     def wrapped_view(**kwargs):
@@ -145,6 +147,16 @@ def login_required(view):
             return {'error': 'Must be logged in'}, 401
         print('user is logged in')
         return view(**kwargs)
+    return wrapped_view
+
+
+def location_required(view):
+    @functools.wraps(view)
+    def wrapped_view(**kwarg):
+        if session['locationId'] is None:
+            print('User does not have location set')
+            return {'error': 'Missing location'}, 401
+        return view(**kwarg)
     return wrapped_view
 
 
@@ -162,12 +174,13 @@ def valid_tokens(view):
         if invalid_tokens:
             print('tokens invalid')
             resp = jsonify(error='Invalid tokens')
-            if session['access_token'] == '0':
-                print('tokens missing')
-                resp.set_cookie('ktok', 'MIS')
-            else:
-                print('tokens expired')
-                resp.set_cookie('ktok', 'EXP')
+            resp.status_code = 401
+            # if session['access_token'] == '0':
+            #     print('tokens missing')
+            #     resp.set_cookie('ktok', 'MIS')
+            # else:
+            #     print('tokens expired')
+            #     resp.set_cookie('ktok', 'EXP')
             return resp
         else:
             return view(**kwargs)

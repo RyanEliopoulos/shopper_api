@@ -1,3 +1,15 @@
+8/12/2022
+    Obviating need for user to input serving and container size info:
+        USDA API provides serving size info by UPC value
+        Kroger API provides 'size' value, though this will require building a custom parser
+            since the values are like '52 fl oz'.
+
+        Bacon is a weird product class where the serving size is given as 'fried slices', so
+        multiplying serving size by servings per container ~150 grams for a 16 oz package.
+        Will be annoying/tricky to figure out how to do weights/measure for this. (just stick with
+        the uncooked weight and require weight measure???)
+
+
 7/31/2022
     SQLite last_rowid: function callable that returns the INTEGER PRIMARY KEY value of the last inserted row on the given
                        connection.
